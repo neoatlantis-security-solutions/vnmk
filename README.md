@@ -26,8 +26,11 @@
 
 ## 这样设计的目的是什么？
 
-本系统设计上用来保存用户的机密数据，比如磁盘的解密密码（的一部分）。
-这一数据必须**不能**被用户记在头脑中，只能通过访问服务器的方式随用随取。
+本系统设计上用来保存用户的机密信息，比如磁盘的解密密码（的一部分），
+避免其他人通过身体/心理/社会施压，强迫用户交出数据。
+
+为了消除任何身心折磨的意义，这一数据必须**不能**被用户记在头脑中，
+只能通过访问服务器的方式随用随取。
 这样，用户或者任何人想要解密磁盘，就被迫访问一次本服务器。
 
 因为想要获取解密信息，除了通过第三方身份认证外，还必须输入一个访问口令，
@@ -62,28 +65,30 @@ In order to prevent the user stored credential from being destroyed, the system
 must be frequently switched between two states(borrowing terminology from
 physics, we call them **ground state** and **excited state**).
 
-1. Both state has a countdown, starting when the server enters that state.
+1. Both states have countdowns, starting when the server enters that state.
    * At ground state, the countdown is longer, by default 7 days.
    * At excited state, the countdown is short, by default 1 hour.
 2. Whichever state the server is in, once the countdown reaches zero, user
    stored credential will be destroyed immediately.
-3. The server may switch between both states:
+3. The server may switch between both states.
    1. An access to the server, turns server into excited state from ground
       state. But if server was already excited, nothing will happen.
-   2. The server will return to ground state, only after the user have
-      performed a successful login(by which it will retrieve stored
+   2. The server will return to ground state, after, and only after the user
+      have performed a successful login(by which it will retrieve stored
       credential).
    3. If the user identifies itself successfully but have entered a wrong
       access code, server will destroy stored credential immediately.
    
 ## What's the point for such design?
 
-The system is designed to guard user's credential, such as part of the key
-used for decrypting its hard disk.
+The system is designed to guard user's credential, such as part of the key used
+for decrypting its hard disk, against any physical/psychologically/social
+pressure/threat/tortures from outside.
 
-This part of data **MUST NOT** be remembered by user. Rather, it must be
-retrieved from server on the fly. In such way anyone, including the user, is
-forced to access the server before decrypting its disk.
+To eliminate any sense with torture, this part of data **MUST NOT** be
+remembered by user. Rather, it must be retrieved from server on the fly. In
+such way anyone, including the user, is forced to access the server before
+decrypting its disk.
 
 To get this access, along with a 3rd party identification, the user must supply
 an access code. There's only one attempt and must be completed within the 1
