@@ -1,3 +1,6 @@
 __pycache__
 *.sw?
 *.pyc
+*.journal
+test.yaml
+credential/

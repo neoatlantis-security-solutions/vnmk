@@ -9,6 +9,7 @@ import json
 
 from .config import ConfigFile
 from .authenticator import Authenticator
+from .statemanager import SystemState
 
 BASEPATH = os.path.dirname(sys.argv[0])
 fullpath = lambda *i: os.path.join(BASEPATH, *i)
@@ -24,11 +25,9 @@ def jsonAnswer(error=None, result=None):
         "result": result, 
     })
 
-def runServer(config):
+def runServer(config, statemanager):
     assert isinstance(config, ConfigFile)
     authenticator = Authenticator(config)
-
-    SESSION_START_TIME = -1
 
     class RandomIntentVerifier:
         """Generates a code based on time. This is a simple prevention of
@@ -46,16 +45,16 @@ def runServer(config):
             return "Input '%s' as username or password, " % self.__getCode() +\
                 "to confirm you really want to visit this page."
 
-    def updateCredential():
-        nonlocal SESSION_START_TIME
+    def ensureServerState():
         config.ensureCredential() # Ensure credential accessible & destroyable
-        if\
-            SESSION_START_TIME > 0 and \
-            SESSION_START_TIME + config.sessionTimeout < time.time()\
-            :
+        currentState = statemanager.reportState()
+        if currentState == SystemState.UNKNOWN:
+            raise Exception("Server network error.")
+        if currentState == SystemState.DECAYED:
             config.destroyCredential()
-            SESSION_START_TIME = -1
             raise Exception("Credential destroyed due to session timeout.")
+        return currentState
+
 
     # ---- Serves static files
 
@@ -68,27 +67,35 @@ def runServer(config):
 
     randomIntentVerifier = RandomIntentVerifier()
     @bottle.get("/<uid>/")
-    @bottle.auth_basic(
-        randomIntentVerifier,
-        realm=randomIntentVerifier,
-        text=randomIntentVerifier
-    )
+    #@bottle.auth_basic(
+    #    randomIntentVerifier,
+    #    realm=randomIntentVerifier,
+    #    text=randomIntentVerifier
+    #)
     def createSession(uid):
-        nonlocal SESSION_START_TIME
         if uid != config.userID:
             return renderTemplate(
                 "error.html", 
                 description="Invalid access URL."
             )
-        if SESSION_START_TIME < 0:
-            SESSION_START_TIME = time.time()
         try:
-            updateCredential()
+            currentState = ensureServerState()
         except Exception as reason:
             return renderTemplate("error.html", description=str(reason))
+        
+        if currentState == SystemState.GROUND:
+            # Server turn into excited state!
+            success = statemanager.createState(SystemState.EXCITED)
+            if not success:
+                # if failed exciting the server
+                return renderTemplate(
+                    "error.html",
+                    description="Server network error."
+                )
         return renderTemplate(
             "vnmk.html",
-            session_timeout=SESSION_START_TIME + config.sessionTimeout
+            session_timeout=\
+                statemanager.stateCreationTime + config.excitedStateTimeout
         )
 
     # ---- API for validating user identification + access code, then deciding
@@ -102,10 +109,11 @@ def runServer(config):
 
     @bottle.post("/<uid>/validate")
     def validate(uid):
-        nonlocal SESSION_START_TIME
         if uid != config.userID: return bottle.abort(404)
         try:
-            updateCredential()
+            currentState = ensureServerState()
+            if currentState != SystemState.EXCITED:
+                raise Exception("Must login over Web UI.")
         except Exception as reason:
             return jsonAnswer(error=str(reason))
 
@@ -135,14 +143,15 @@ def runServer(config):
         # Step 3: Verification of access code
         if authcode == config.authCode:
             print("Access code valid. Releasing credential...")
-            SESSION_START_TIME = -1 # reset countdown
             try:
+                statemanager.createState(SystemState.GROUND)
                 return jsonAnswer(result=config.releaseCredential())
             except Exception as e:
                 print("Failed releasing credential. %s" % e)
                 return jsonAnswer(error=str(e))
         else:
             print("Access code invalid. Destroy credential!")
+            statemanager.createState(SystemState.DECAYED)
             config.destroyCredential()
             return jsonAnswer(
                 error="Credential destroyed due to invalid access code.")
