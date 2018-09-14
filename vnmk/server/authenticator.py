@@ -75,8 +75,16 @@ class Authenticator:
     # ---- Firebase Authentication
 
     def firebase(self, config, data):
+        """{
+            'iss': 'https://securetoken.google.com/...',
+            'name': '...',
+            'picture': '...', 'aud': '...', 'auth_time': 1536947307,
+            'user_id': '...', 'sub': '...', 'iat': 1536947882, 'exp': 1536951482,
+            'email': '...',
+            'email_verified': False,
+            'uid': '...'
+        }"""
         decodedToken = auth.verify_id_token(data)
-        print(decodedToken)
         if not decodedToken["email"] in config["users"]:
             raise Exception("User is not allowed to access.")
         return True

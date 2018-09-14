@@ -3,14 +3,14 @@
 
 <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'self' *.gstatic.com *.googleapi.com *.google.com *.firebase.com *.googleapis.com *.firebaseapp.com *.firebaseio.com"
+    content="{{ meta_csp }}"
 >
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
-<script src="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.js"></script>
+<script src="/static/jquery.min.js"></script>
+<script src="/static/firebase.js"></script>
+<script src="/static/firebaseui.js"></script>
 <script src="/static/openpgp.min.js"></script>
-<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.css" />
+<link type="text/css" rel="stylesheet" href="/static/firebaseui.css" />
 
 <script id="config" type="application/json">
 {

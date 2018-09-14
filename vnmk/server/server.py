@@ -15,6 +15,17 @@ BASEPATH = os.path.dirname(sys.argv[0])
 fullpath = lambda *i: os.path.join(BASEPATH, *i)
 
 
+HEADER_CSP = " ".join([
+    "default-src",
+    "'self'",
+    "*.gstatic.com",
+    "*.google.com",
+    "*.firebase.com",
+    "*.googleapis.com",
+    "*.firebaseapp.com",
+    "*.firebaseio.com"
+])
+
 def renderTemplate(filename, **arguments):
     fullname = fullpath("static", filename)
     return bottle.template(open(fullname, "r").read(), **arguments)
@@ -73,6 +84,8 @@ def runServer(config, statemanager):
     #    text=randomIntentVerifier
     #)
     def createSession(uid):
+        bottle.response.set_header("Content-Security-Policy", HEADER_CSP)
+
         if uid != config.userID:
             return renderTemplate(
                 "error.html", 
@@ -94,6 +107,7 @@ def runServer(config, statemanager):
                 )
         return renderTemplate(
             "vnmk.html",
+            meta_csp=HEADER_CSP,
             session_timeout=\
                 statemanager.stateCreationTime + config.excitedStateTimeout,
             firebase_project_id=\
