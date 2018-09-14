@@ -148,6 +148,18 @@ function initResult(result){
 }
 
 function tryDecrypt(){
+    var ciphertext = $('#credential').text();
+    $("button#decrypt").attr("disabled", true);
+    openpgp.decrypt({
+        message: openpgp.message.readArmored(ciphertext),
+        passwords: [$("#password").val()],
+    }).then(function(plaintext){
+        console.log(plaintext);
+    }).catch(function(){
+        $("button#decrypt").attr("disabled", false);
+        alert("Password error.");
+    });
+
 }
 $("button#decrypt").click(tryDecrypt);
 

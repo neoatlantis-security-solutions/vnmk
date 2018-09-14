@@ -30,10 +30,11 @@ def renderTemplate(filename, **arguments):
     fullname = fullpath("static", filename)
     return bottle.template(open(fullname, "r").read(), **arguments)
 
-def jsonAnswer(error=None, result=None):
+def jsonAnswer(error=None, result=None, relogin=None):
     return json.dumps({
         "error": error,
-        "result": result, 
+        "result": result,
+        "relogin": relogin,
     })
 
 def runServer(config, statemanager):
