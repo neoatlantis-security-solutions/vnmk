@@ -66,6 +66,11 @@ function onPageUnload(){
 $(window).on("beforeunload", onPageUnload);
 
 
+function onReloginRequired(){
+    firebase.auth().signOut()
+}
+
+
 function onLogin(){
     var accesscode = $("#accesscode").val().trim();
     if(undefined == accesscode || accesscode.length < 3){
@@ -98,6 +103,9 @@ function onLogin(){
         console.log(answer);
         if(answer.error){
             $("#error").text(answer.error);
+            if(true == answer.relogin){
+                onReloginRequired();
+            }
             return;
         }
         $("body")

@@ -155,7 +155,7 @@ def runServer(config, statemanager):
             print("Authentication successful.")
         else:
             print("Authentication failed!", authFailReason)
-            return jsonAnswer(error=authFailReason)
+            return jsonAnswer(error=authFailReason, relogin=True)
 
         # Step 3: Verification of access code
         if authcode == config.authCode:

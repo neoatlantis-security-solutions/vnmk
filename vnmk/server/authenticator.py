@@ -85,6 +85,11 @@ class Authenticator:
             'uid': '...'
         }"""
         decodedToken = auth.verify_id_token(data)
+        if "one-time-token" in config and config["one-time-token"] == True:
+            # Feature: token may used only once.
+            auth.revoke_refresh_tokens(decodedToken["uid"])
+        if abs(time.time() - decodedToken["auth_time"]) > self.TIMEOUT:
+            raise Exception("Token timed out. Relogin required.")
         if not decodedToken["email"] in config["users"]:
             raise Exception("User is not allowed to access.")
         return True
