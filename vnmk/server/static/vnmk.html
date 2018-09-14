@@ -1,21 +1,28 @@
 <html>
 <head>
+
+<meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self' *.gstatic.com *.googleapi.com *.google.com *.firebase.com *.googleapis.com *.firebaseapp.com *.firebaseio.com"
+>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
 <script src="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.js"></script>
 <script src="/static/openpgp.min.js"></script>
 <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.css" />
 
-<script>
-var sessionTimeout={{ session_timeout }};
-firebase.initializeApp({
-    apiKey: "{{ firebase_api_key }}",
-    authDomain: "{{ firebase_project_id }}.firebaseapp.com",
-    databaseURL: "https://{{ firebase_project_id }}.firebaseio.com",
-    projectId: "{{ firebase_project_id }}",
-});
+<script id="config" type="application/json">
+{
+    "session_timeout": {{ session_timeout }},
+    "firebase": {
+        "apiKey": "{{ firebase_api_key }}",
+        "authDomain": "{{ firebase_project_id }}.firebaseapp.com",
+        "databaseURL": "https://{{ firebase_project_id }}.firebaseio.com",
+        "projectId": "{{ firebase_project_id }}"
+    }
+}
 </script>
-<script src="/static/main.js"></script>
 <link type="text/css" rel="stylesheet" href="/static/main.css" />
 
 </head>
@@ -27,13 +34,14 @@ firebase.initializeApp({
 <div class="not-authenticated">
 
     <h3>Please authenticate yourself by one of following providers...</h3>
-    <div id="telegram">
+    <!--<div id="telegram">
         <script 
             async src="https://telegram.org/js/telegram-widget.js?4"
             data-telegram-login="neoatlantis_terminaldogma_bot" data-size="large"
             data-onauth="onTelegramAuth(user)"></script>
-    </div>
+    </div>-->
     <div id="firebase">
+        <div id="firebase-result"></div>
         <div id="firebaseui-auth-container"></div>
     </div>
 
@@ -51,7 +59,7 @@ firebase.initializeApp({
     <hr />
     <div id="error"></div>
     <div>
-        <button type="button" id="login" disabled autocomplete="off" onclick="onLogin()">
+        <button type="button" id="login" disabled autocomplete="off">
             <strong>Request Access</strong>
             <div>
                 <br />
@@ -70,9 +78,10 @@ firebase.initializeApp({
         <hr />
         Decrypt with password:
         <input type="password" id="password" />
-        <button id="decrypt" onclick="tryDecrypt();">Decrypt</button>
+        <button id="decrypt">Decrypt</button>
     </div>
 </div>
 
+<script src="/static/main.js"></script>
 </body>
 </html>

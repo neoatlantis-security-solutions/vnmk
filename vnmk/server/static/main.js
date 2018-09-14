@@ -1,3 +1,9 @@
+var config = JSON.parse($("#config").text());
+
+var sessionTimeout=config.session_timeout;
+firebase.initializeApp(config.firebase);
+
+
 var AUTH;
 
 $(function(){
@@ -15,18 +21,23 @@ $(function(){
 
 });
 
-function onFirebaseAuth(authResult){
-    firebase.auth().currentUser.getIdToken(true).then(function(idToken){
-        AUTH = {
-            type: "firebase", 
-            data: idToken,
-        };
+firebase.auth().onAuthStateChanged(function(user){
+    if(user){
+        $("#firebase-result").show().text(user.email);
+        $("#firebaseui-auth-container").hide();
         $("#login").attr("disabled", false);
-    });
+    } else {
+        $("#firebase-result").hide();
+        $("#firebaseui-auth-container").show();
+        $("#login").attr("disabled", true);
+    }
+});
+
+function onFirebaseAuth(authResult){
     return false;
 }
 
-function onTelegramAuth(user) {
+/*function onTelegramAuth(user) {
     console.log(user);
     var username = user.username;
     $("#telegram").text(username);
@@ -35,7 +46,7 @@ function onTelegramAuth(user) {
         type: "telegram", 
         data: user
     };
-}
+}*/
 
 
 
@@ -63,17 +74,27 @@ function onLogin(){
     }
 
     $("#login").attr("disabled", true);
-    $.ajax({
-        url: "./validate",
-        method: "POST",
-        data: JSON.stringify({
-            auth: AUTH,
-            code: accesscode,
-        }),
-        dataType: "json",
-        contentType: "application/json",
+
+    firebase.auth().currentUser.getIdToken(true)
+    .then(function(idToken){
+        return {
+            type: "firebase", 
+            data: idToken,
+        };
     })
-    .done(function(answer){
+    .then(function(authdata){
+        return $.ajax({
+            url: "./validate",
+            method: "POST",
+            data: JSON.stringify({
+                auth: authdata,
+                code: accesscode,
+            }),
+            dataType: "json",
+            contentType: "application/json",
+        });
+    })
+    .then(function(answer){
         console.log(answer);
         if(answer.error){
             $("#error").text(answer.error);
@@ -85,10 +106,15 @@ function onLogin(){
         ;
         initResult(answer.result);
     })
-    .always(function(){
+    .then(function(){
+        $("#login").attr("disabled", false);
+    })
+    .catch(function(){
         $("#login").attr("disabled", false);
     });
 }
+$("button#login").click(onLogin);
+
 
 // After successful authentication.
 
@@ -115,6 +141,6 @@ function initResult(result){
 
 function tryDecrypt(){
 }
-
+$("button#decrypt").click(tryDecrypt);
 
 

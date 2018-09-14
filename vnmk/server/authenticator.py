@@ -76,6 +76,7 @@ class Authenticator:
 
     def firebase(self, config, data):
         decodedToken = auth.verify_id_token(data)
+        print(decodedToken)
         if not decodedToken["email"] in config["users"]:
             raise Exception("User is not allowed to access.")
         return True
