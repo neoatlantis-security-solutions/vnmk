@@ -9,6 +9,9 @@ import hashlib
 import hmac
 import time
 
+import firebase_admin
+from firebase_admin import auth
+
 from .config import ConfigFile
 
 
@@ -21,6 +24,7 @@ class Authenticator:
         assert isinstance(config, ConfigFile)
         self.idProviders = config.idProviders
         self.DEBUG = config.DEBUG
+        #self.__firebase = config.firebase
 
     def __call__(self, data):
         method = data["type"]
@@ -65,4 +69,13 @@ class Authenticator:
         except:
             raise Exception("Malformed authentication request.")
 
+        return True
+
+
+    # ---- Firebase Authentication
+
+    def firebase(self, config, data):
+        decodedToken = auth.verify_id_token(data)
+        if not decodedToken["email"] in config["users"]:
+            raise Exception("User is not allowed to access.")
         return True

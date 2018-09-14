@@ -6,17 +6,13 @@ import hashlib
 import base64
 import struct
 from enum import Enum
+from multiprocessing import Process
 
 import firebase_admin
 from firebase_admin import credentials, db
 
 from .config import ConfigFile
 from .looptimer import LoopTimer
-
-# TODO out-of-sync state may still happen due to temporialily network error.
-# To overcome this, a special class maintaining(and enforce writing) new state
-# creation time & new decayed mark time, shall be written.
-
 
 
 
@@ -33,13 +29,19 @@ class SystemState(Enum):
     # destroyed.
     DECAYED  = 9
 
-class StateUpdater:
+
+
+class StateUpdater(LoopTimer):
+
+    INTERVAL = 30
 
     def __init__(self, userid, initState):
         self.userid = userid
         self.__internalState = initState
         self.__internalState["updated"] = time.time()
-        self.__needSync = True 
+        self.__needSync = True
+        self.__syncProcess = None
+        LoopTimer.__init__(self, self.__sync, self.INTERVAL)
 
     @property
     def creation(self):
@@ -62,29 +64,48 @@ class StateUpdater:
         self.__internalState[key] = value
         self.__needSync = True
 
-    def sync(self):
+    def __syncWriteProcess(self, newState, newTime):
         try:
-            if self.__needSync:
-                print("Sync state to server...")
-                nowtime = time.time()
-
-                # TODO try to use multiprocessing for sync
-                db.reference("/%s/" % self.userid).set({
-                    "creation": self.__internalState["creation"],
-                    "updated":  nowtime,
-                    "excited":  self.__internalState["excited"],
-                    "decayed":  self.__internalState["decayed"],
-                })
-                self.__internalState["updated"] = nowtime
-                self.__needSync = False
+            print("---- Sync new state...")
+            newState["updated"] = newTime
+            db.reference("/%s/" % self.userid).set(newState)
+            return exit(0)
         except Exception as e:
-            print("Sync state error: %s" % e)
+            print("---- Sync error: %s" % e)
+            return exit(1)
+
+    def __sync(self):
+        """NOTE this should be called within another thread, periodically."""
+        nowtime = time.time()
+        # check for last sync
+        if self.__syncProcess:
+            if self.__syncProcess.exitcode == None:
+                self.__syncProcess.terminate()
+                print("---- Sync timed out.")
+            elif self.__syncProcess.exitcode == 0:
+                self.__internalState["updated"] = self.__syncProcess._updated
+                print("---- Sync ended successfully: %d." %\
+                    self.__internalState["updated"])
+        # do next sync
+        if not self.__needSync: return
+        self.__syncProcess = Process(
+            target=self.__syncWriteProcess,
+            args=(self.__internalState, nowtime)
+        )
+        setattr(self.__syncProcess, "_updated", nowtime)
+        self.__syncProcess.start()
+
+    def stop(self):
+        if self.__syncProcess and self.__syncProcess.exitcode == None:
+            self.__syncProcess.terminate()
+        LoopTimer.stop(self)
+
 
 
 class StateManager:
 
-    OUT_OF_SYNC_TOLERANCE = 300
-    HEARTBEAT_INTERVAL    = 60
+    OUT_OF_SYNC_TOLERANCE = 120
+    HEARTBEAT_INTERVAL    = 15 
     TIMEOUT_GROUND        = 604800
     TIMEOUT_EXCITED       = 3600
 
@@ -103,13 +124,7 @@ class StateManager:
         self.TIMEOUT_GROUND = config.groundStateTimeout
         self.TIMEOUT_EXCITED = config.excitedStateTimeout
 
-        cred = credentials.Certificate(config.firebase["credential"])
-        self.firebase = firebase_admin.initialize_app(cred, {
-            "databaseURL": config.firebase["URL"],
-            'databaseAuthVariableOverride': {
-                'uid': '__python-server__'
-            }
-        })
+        self.firebase = config.firebase
         try:
             if creation:
                 self.initDatabase()
@@ -154,7 +169,6 @@ class StateManager:
         if newState == SystemState.DECAYED:
             try:
                 self.stateUpdater.set("decayed", True)
-                self.stateUpdater.sync()
             except Exception as e:
                 print("Cannot create new state: %s" % e)
             return True
@@ -164,7 +178,6 @@ class StateManager:
             nowtime = time.time()
             self.stateUpdater.set("excited", newState == SystemState.EXCITED)
             self.stateUpdater.set("creation", nowtime)
-            self.stateUpdater.sync()
         except Exception as e:
             print("Cannot create new state: %s" % e)
             return False
@@ -188,7 +201,6 @@ class StateManager:
             timedout = ((nowtime - creation) > self.TIMEOUT_GROUND)
         if timedout:
             self.stateUpdater.set("decayed", True)
-            self.stateUpdater.sync()
             print("State timed out! Decay now!")
             return SystemState.DECAYED
         return SystemState.EXCITED if excited else SystemState.GROUND
@@ -197,13 +209,7 @@ class StateManager:
         """Check firebase server status."""
         print("Recalculate system state...")
         self.recalculateState()
-        print("Sync with firebase server...")
-        try:
-            self.stateUpdater.sync()
-        except Exception as e:
-            print("Error in syncing: %s" % e)
-
-        print(repr(self.reportState()))
+        print("System state: ", repr(self.reportState()))
 
     def reportState(self):
         try:
@@ -215,7 +221,9 @@ class StateManager:
     def __enter__(self, *args):
         self.timer = LoopTimer(self.heartbeat, self.HEARTBEAT_INTERVAL)
         self.timer.start()
+        self.stateUpdater.start()
         return self
 
     def __exit__(self, *args):
         self.timer.stop()
+        self.stateUpdater.stop()

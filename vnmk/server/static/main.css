@@ -1,0 +1,31 @@
+
+body {
+    text-align: center;
+    padding: 3em;
+    line-height: 2em;
+}
+hr {
+    margin-top: 3em;
+    margin-bottom: 3em;
+}
+input[type="password"] {
+    font-family: monospace;
+    font-size: 2em;
+    width: 8em;
+    letter-spacing: 0.5em;
+}
+button{
+    font-size: 1em;
+    padding: 0.5em;
+}
+pre{
+    font-family: monospace;
+    line-height: 1.1em;
+    text-align: left;
+    margin-left: 2em;
+    margin-right: 2em;
+}
+body.status-not-authenticated .not-authenticated { display: block }
+body.status-not-authenticated .authenticated { display: none }
+body.status-authenticated .not-authenticated { display: none }
+body.status-authenticated .authenticated { display: block }

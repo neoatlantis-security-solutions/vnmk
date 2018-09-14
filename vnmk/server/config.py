@@ -8,6 +8,10 @@ import hashlib
 import hmac
 import time
 
+import firebase_admin
+from firebase_admin import credentials
+
+
 class ConfigFile:
 
     def __init__(self, filename):
@@ -21,8 +25,19 @@ class ConfigFile:
         self.idProviders = read["id-provider"]
         self.groundStateTimeout = read["timeouts"]["ground"]
         self.excitedStateTimeout = read["timeouts"]["excited"]
-        self.firebase = read["firebase"]
+
+        self.firebase = self.__initFirebase(read["firebase"])
+        self.firebaseConfig = read["firebase"]
         self.ensureCredential()
+
+    def __initFirebase(self, firebaseConfig):
+        cred = credentials.Certificate(firebaseConfig["credential"])
+        return firebase_admin.initialize_app(cred, {
+            "databaseURL": firebaseConfig["URL"],
+            'databaseAuthVariableOverride': {
+                'uid': '__python-server__'
+            }
+        })
 
     def ensureCredential(self):
         """Ensures credential file exists and is writable."""

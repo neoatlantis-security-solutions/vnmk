@@ -1,40 +1,23 @@
 <html>
 <head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
+<script src="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.js"></script>
 <script src="/static/openpgp.min.js"></script>
-<style>
-body {
-    text-align: center;
-    padding: 3em;
-    line-height: 2em;
-}
-hr {
-    margin-top: 3em;
-    margin-bottom: 3em;
-}
-input[type="password"] {
-    font-family: monospace;
-    font-size: 2em;
-    width: 8em;
-    letter-spacing: 0.5em;
-}
-button{
-    font-size: 1em;
-    padding: 0.5em;
-}
-pre{
-    font-family: monospace;
-    line-height: 1.1em;
-    text-align: left;
-    margin-left: 2em;
-    margin-right: 2em;
-}
-body.status-not-authenticated .not-authenticated { display: block }
-body.status-not-authenticated .authenticated { display: none }
-body.status-authenticated .not-authenticated { display: none }
-body.status-authenticated .authenticated { display: block }
+<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.css" />
 
-</style>
+<script>
+var sessionTimeout={{ session_timeout }};
+firebase.initializeApp({
+    apiKey: "{{ firebase_api_key }}",
+    authDomain: "{{ firebase_project_id }}.firebaseapp.com",
+    databaseURL: "https://{{ firebase_project_id }}.firebaseio.com",
+    projectId: "{{ firebase_project_id }}",
+});
+</script>
+<script src="/static/main.js"></script>
+<link type="text/css" rel="stylesheet" href="/static/main.css" />
+
 </head>
 <body class="status-not-authenticated">
 
@@ -43,12 +26,15 @@ body.status-authenticated .authenticated { display: block }
 
 <div class="not-authenticated">
 
-    <h3>Please authenticate yourself by Telegram...</h3>
+    <h3>Please authenticate yourself by one of following providers...</h3>
     <div id="telegram">
-    <script 
-        async src="https://telegram.org/js/telegram-widget.js?4"
-        data-telegram-login="neoatlantis_terminaldogma_bot" data-size="large"
-        data-onauth="onTelegramAuth(user)"></script>
+        <script 
+            async src="https://telegram.org/js/telegram-widget.js?4"
+            data-telegram-login="neoatlantis_terminaldogma_bot" data-size="large"
+            data-onauth="onTelegramAuth(user)"></script>
+    </div>
+    <div id="firebase">
+        <div id="firebaseui-auth-container"></div>
     </div>
 
     <h3>...and input a correct access code:</h3>
@@ -87,100 +73,6 @@ body.status-authenticated .authenticated { display: block }
         <button id="decrypt" onclick="tryDecrypt();">Decrypt</button>
     </div>
 </div>
-
-
-
-
-
-<script type="text/javascript">
-var AUTH;
-var sessionTimeout={{ session_timeout }};
-
-setInterval(function(){
-    var countdown = sessionTimeout - new Date().getTime() / 1000;
-    $("#countdown").text(countdown.toFixed(0));
-}, 500);
-
-function onTelegramAuth(user) {
-    console.log(user);
-    var username = user.username;
-    $("#telegram").text(username);
-    $("#login").attr("disabled", false);
-    AUTH = user;
-}
-
-function onPageUnload(){
-    $("body").empty();
-}
-$(window).on("beforeunload", onPageUnload);
-
-function onLogin(){
-    var accesscode = $("#accesscode").val().trim();
-    if(undefined == accesscode || accesscode.length < 3){
-        alert("No valid access code provided.");
-        return;
-    }
-
-    $("#login").attr("disabled", true);
-    $.ajax({
-        url: "./validate",
-        method: "POST",
-        data: JSON.stringify({
-            auth: {
-                type: "telegram",
-                data: AUTH,
-            },
-            code: accesscode,
-        }),
-        dataType: "json",
-        contentType: "application/json",
-    })
-    .done(function(answer){
-        console.log(answer);
-        if(answer.error){
-            $("#error").text(answer.error);
-            return;
-        }
-        $("body")
-            .removeClass("status-not-authenticated")
-            .addClass("status-authenticated")
-        ;
-        initResult(answer.result);
-    })
-    .always(function(){
-        $("#login").attr("disabled", false);
-    });
-}
-
-// After successful authentication.
-
-function isPGPMessage(text){
-    try{
-        var attempt = openpgp.message.readArmored(text);
-        if(attempt.packets.length > 0){
-            for(var i=0; i<attempt.packets.length; i++)
-                if(attempt.packets[i].tag == 18) return true;
-        }
-    } catch {
-    }
-    return false;
-}
-
-function initResult(result){
-    $("#credential").text(result);
-    if(isPGPMessage(result)){
-        $("#decrypt-prompt").show();
-    } else {
-        $("#decrypt-prompt").hide();
-    }
-}
-
-function tryDecrypt(){
-}
-
-
-
-</script>
 
 </body>
 </html>

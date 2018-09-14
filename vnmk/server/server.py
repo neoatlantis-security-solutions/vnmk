@@ -95,7 +95,10 @@ def runServer(config, statemanager):
         return renderTemplate(
             "vnmk.html",
             session_timeout=\
-                statemanager.stateCreationTime + config.excitedStateTimeout
+                statemanager.stateCreationTime + config.excitedStateTimeout,
+            firebase_project_id=\
+                config.firebaseConfig["credential"]["project_id"],
+            firebase_api_key=config.idProviders["firebase"]["apikey"]
         )
 
     # ---- API for validating user identification + access code, then deciding
