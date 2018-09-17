@@ -15,7 +15,7 @@ BASEPATH = os.path.dirname(sys.argv[0])
 fullpath = lambda *i: os.path.join(BASEPATH, *i)
 
 
-HEADER_CSP = " ".join([
+HEADER_EXCITED_CSP = " ".join([
     "default-src",
     "'self'",
     "*.gstatic.com",
@@ -24,6 +24,14 @@ HEADER_CSP = " ".join([
     "*.googleapis.com",
     "*.firebaseapp.com",
     "*.firebaseio.com"
+])
+
+HEADER_GROUND_CSP = " ".join([
+    "default-src",
+    "'self'",
+    "'unsafe-eval'",
+    "telegram.org",
+    "oauth.telegram.org",
 ])
 
 def renderTemplate(filename, **arguments):
@@ -41,22 +49,6 @@ def runServer(config, statemanager):
     assert isinstance(config, ConfigFile)
     authenticator = Authenticator(config)
 
-    class RandomIntentVerifier:
-        """Generates a code based on time. This is a simple prevention of
-        accidential open of a session, by asking the user to input a 4-digit
-        code that is displayed, which is valid for 30 seconds."""
-        def __getCode(self):
-            return str(int(time.time() / 30))[-4:]
-        def __call__(self, u, p):
-            if SESSION_START_TIME > 0:
-                # Fast-track to login page, when count down already started.
-                return True
-            return p.lower().strip() == self.__getCode()\
-                or u.lower().strip() == self.__getCode() 
-        def __str__(self):
-            return "Input '%s' as username or password, " % self.__getCode() +\
-                "to confirm you really want to visit this page."
-
     def ensureServerState():
         config.ensureCredential() # Ensure credential accessible & destroyable
         currentState = statemanager.reportState()
@@ -67,7 +59,6 @@ def runServer(config, statemanager):
             raise Exception("Credential destroyed due to session timeout.")
         return currentState
 
-
     # ---- Serves static files
 
     @bottle.get("/static/<filename>")
@@ -77,38 +68,39 @@ def runServer(config, statemanager):
     # ---- Handles interface page for user login, which also includes starting
     #      the count down.
 
-    randomIntentVerifier = RandomIntentVerifier()
     @bottle.get("/<uid>/")
-    #@bottle.auth_basic(
-    #    randomIntentVerifier,
-    #    realm=randomIntentVerifier,
-    #    text=randomIntentVerifier
-    #)
     def createSession(uid):
-        bottle.response.set_header("Content-Security-Policy", HEADER_CSP)
 
         if uid != config.userID:
             return renderTemplate(
                 "error.html", 
                 description="Invalid access URL."
             )
+
         try:
             currentState = ensureServerState()
+            # if success, currentState must be either GROUND or EXCITED
+            assert currentState in [SystemState.GROUND, SystemState.EXCITED]
         except Exception as reason:
             return renderTemplate("error.html", description=str(reason))
-        
+
         if currentState == SystemState.GROUND:
-            # Server turn into excited state!
-            success = statemanager.createState(SystemState.EXCITED)
-            if not success:
-                # if failed exciting the server
-                return renderTemplate(
-                    "error.html",
-                    description="Server network error."
-                )
+            bottle.response.set_header(
+                "Content-Security-Policy",
+                HEADER_GROUND_CSP
+            )
+            return renderTemplate(
+                "activate.html",
+                meta_csp=HEADER_GROUND_CSP
+            )
+
+        bottle.response.set_header(
+            "Content-Security-Policy",
+            HEADER_EXCITED_CSP
+        )
         return renderTemplate(
             "vnmk.html",
-            meta_csp=HEADER_CSP,
+            meta_csp=HEADER_EXCITED_CSP,
             session_timeout=\
                 statemanager.stateCreationTime + config.excitedStateTimeout,
             firebase_project_id=\
@@ -120,7 +112,7 @@ def runServer(config, statemanager):
     #      whether to return or to destroy the stored credential.
     #      NOTICE that this API must be atomic, e.g. identification and access
     #      code MUST be provided in the same request. Only a single failure on
-    #      identifying the user may be tolerated without destroying anything:
+    #      identifying the user may be tolerated without destroying anything.
     #
     #      **with a valid user identification, access code must be validated
     #      before exiting this function!**
@@ -148,6 +140,7 @@ def runServer(config, statemanager):
         authResult = False
         authFailReason = None
         try:
+            assert authdata["type"] == "firebase"
             authResult = authenticator(authdata)
         except Exception as e:
             authResult = False
@@ -174,6 +167,39 @@ def runServer(config, statemanager):
             return jsonAnswer(
                 error="Credential destroyed due to invalid access code.")
         
+
+    # ---- API for activating the system, e.g. turn it from ground state to
+    #     excited state.
+
+    @bottle.get("/<uid>/activate")
+    def activate(uid):
+        if uid != config.userID: return bottle.abort(404)
+        try:
+            currentState = ensureServerState()
+            if currentState != SystemState.GROUND:
+                return jsonAnswer(result="ok")
+        except Exception as reason:
+            return jsonAnswer(error=str(reason))
+
+        query = bottle.request.query
+        print(query)
+        authdata = {"type": "telegram", "data": dict(query)}
+
+        authResult = False
+        authFailReason = None
+        try:
+            assert authdata["type"] == "telegram"
+            authResult = authenticator(authdata)
+        except Exception as e:
+            authResult = False
+            authFailReason = str(e)
+        if authResult == True:
+            print("Activation successful.")
+            statemanager.createState(SystemState.EXCITED)
+            return bottle.redirect("/%s/" % uid)
+        else:
+            print("Activation failed!", authFailReason)
+            return renderTemplate("error.html", description=authFailReason)
 
 
     bottle.run(host=config.serverAddr, port=config.serverPort)
