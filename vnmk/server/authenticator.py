@@ -18,7 +18,8 @@ from .config import ConfigFile
 
 class Authenticator:
     
-    TIMEOUT = 300
+    TIMEOUT_FIREBASE = 300
+    TIMEOUT_TELEGRAM = 60
 
     def __init__(self, config):
         assert isinstance(config, ConfigFile)
@@ -38,12 +39,13 @@ class Authenticator:
 
     # ---- Telegram Authentication
 
+    """
     def telegram(self, config, data):
         key = hashlib.sha256(config["token"].encode("utf-8")).digest()
 
         try:
             authTime = int(data["auth_date"])
-            if abs(time.time() - authTime) > self.TIMEOUT:
+            if abs(time.time() - authTime) > self.TIMEOUT_TELEGRAM:
                 raise Exception(
                     "Authentication timestamp invalid. " + \
                     "Try re-login or fix server time.")
@@ -70,6 +72,7 @@ class Authenticator:
             raise Exception("Malformed authentication request.")
 
         return True
+    """
 
 
     # ---- Firebase Authentication
@@ -88,7 +91,7 @@ class Authenticator:
         if "one-time-token" in config and config["one-time-token"] == True:
             # Feature: token may used only once.
             auth.revoke_refresh_tokens(decodedToken["uid"])
-        if abs(time.time() - decodedToken["auth_time"]) > self.TIMEOUT:
+        if abs(time.time() - decodedToken["auth_time"]) > self.TIMEOUT_FIREBASE:
             auth.revoke_refresh_tokens(decodedToken["uid"])
             raise Exception("Token timed out. Relogin required.")
         if not decodedToken["email"] in config["users"]:

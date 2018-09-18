@@ -12,6 +12,7 @@ import time
 from .server import runServer
 from .config import ConfigFile
 from .statemanager import StateManager
+from .telegram import TelegramAuthenticateBot
 
 parser = argparse.ArgumentParser()
 
@@ -25,5 +26,8 @@ args = parser.parse_args()
 
 config = ConfigFile(args.config)
 
-with StateManager(config, creation=args.init) as statemanager:
-    runServer(config, statemanager=statemanager)
+with\
+    StateManager(config, creation=args.init) as statemanager,\
+    TelegramAuthenticateBot(config.idProviders["telegram"]) as telegram \
+:
+    runServer(config, statemanager=statemanager, telegram=telegram)

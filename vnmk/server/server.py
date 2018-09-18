@@ -29,9 +29,6 @@ HEADER_EXCITED_CSP = " ".join([
 HEADER_GROUND_CSP = " ".join([
     "default-src",
     "'self'",
-    "'unsafe-eval'",
-    "telegram.org",
-    "oauth.telegram.org",
 ])
 
 def renderTemplate(filename, **arguments):
@@ -45,18 +42,22 @@ def jsonAnswer(error=None, result=None, relogin=None):
         "relogin": relogin,
     })
 
-def runServer(config, statemanager):
+def runServer(config, statemanager, telegram):
     assert isinstance(config, ConfigFile)
     authenticator = Authenticator(config)
 
-    def ensureServerState():
-        config.ensureCredential() # Ensure credential accessible & destroyable
+    def ensureServerState(*states, ensureCredential=True):
         currentState = statemanager.reportState()
         if currentState == SystemState.UNKNOWN:
             raise Exception("Server network error.")
         if currentState == SystemState.DECAYED:
             config.destroyCredential()
             raise Exception("Credential destroyed due to session timeout.")
+        if currentState not in states:
+            raise Exception("Please (re-)login with website UI.")
+        if ensureCredential:
+            # Ensure credential accessible & destroyable
+            config.ensureCredential()
         return currentState
 
     # ---- Serves static files
@@ -70,17 +71,11 @@ def runServer(config, statemanager):
 
     @bottle.get("/<uid>/")
     def createSession(uid):
-
-        if uid != config.userID:
-            return renderTemplate(
-                "error.html", 
-                description="Invalid access URL."
-            )
+        if uid != config.userID: return bottle.abort(404)
 
         try:
-            currentState = ensureServerState()
-            # if success, currentState must be either GROUND or EXCITED
-            assert currentState in [SystemState.GROUND, SystemState.EXCITED]
+            currentState = ensureServerState(
+                SystemState.GROUND, SystemState.EXCITED)
         except Exception as reason:
             return renderTemplate("error.html", description=str(reason))
 
@@ -121,9 +116,7 @@ def runServer(config, statemanager):
     def validate(uid):
         if uid != config.userID: return bottle.abort(404)
         try:
-            currentState = ensureServerState()
-            if currentState != SystemState.EXCITED:
-                raise Exception("Must login over Web UI.")
+            ensureServerState(SystemState.EXCITED)
         except Exception as reason:
             return jsonAnswer(error=str(reason))
 
@@ -171,13 +164,10 @@ def runServer(config, statemanager):
     # ---- API for activating the system, e.g. turn it from ground state to
     #     excited state.
 
-    @bottle.get("/<uid>/activate")
-    def activate(uid):
+    """def activate(uid):
         if uid != config.userID: return bottle.abort(404)
         try:
-            currentState = ensureServerState()
-            if currentState != SystemState.GROUND:
-                return jsonAnswer(result="ok")
+            ensureServerState(SystemState.GROUND)
         except Exception as reason:
             return jsonAnswer(error=str(reason))
 
@@ -199,7 +189,23 @@ def runServer(config, statemanager):
             return bottle.redirect("/%s/" % uid)
         else:
             print("Activation failed!", authFailReason)
-            return renderTemplate("error.html", description=authFailReason)
+            return renderTemplate("error.html", description=authFailReason)"""
 
+    @bottle.get("/<uid>/activated")
+    def activated(uid):
+        if uid != config.userID: return bottle.abort(404)
+        try:
+            ensureServerState(SystemState.GROUND, ensureCredential=False)
+        except Exception as reason:
+            return jsonAnswer(result=True)
+        return jsonAnswer(error=telegram.token, relogin=True)
+
+    def onTokenVerified():
+        try:
+            ensureServerState(SystemState.GROUND) # prevent re-excitation
+            statemanager.createState(SystemState.EXCITED)
+        except Exception as e:
+            print("Failed exciting system: %s" % e)
+    telegram.onTokenVerified = onTokenVerified
 
     bottle.run(host=config.serverAddr, port=config.serverPort)
