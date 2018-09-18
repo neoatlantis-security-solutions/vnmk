@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+"""Use gevent for long polling AJAX"""
+from gevent import monkey; monkey.patch_all()
+
 import bottle
 import random
 import os
@@ -45,6 +48,7 @@ def jsonAnswer(error=None, result=None, relogin=None):
 def runServer(config, statemanager, telegram):
     assert isinstance(config, ConfigFile)
     authenticator = Authenticator(config)
+    telegram.statemanager = statemanager
 
     def ensureServerState(*states, ensureCredential=True):
         currentState = statemanager.reportState()
@@ -86,7 +90,8 @@ def runServer(config, statemanager, telegram):
             )
             return renderTemplate(
                 "activate.html",
-                meta_csp=HEADER_GROUND_CSP
+                meta_csp=HEADER_GROUND_CSP,
+                token=telegram.token
             )
 
         bottle.response.set_header(
@@ -195,7 +200,9 @@ def runServer(config, statemanager, telegram):
     def activated(uid):
         if uid != config.userID: return bottle.abort(404)
         try:
-            ensureServerState(SystemState.GROUND, ensureCredential=False)
+            for i in range(0, 30):
+                ensureServerState(SystemState.GROUND, ensureCredential=False)
+                time.sleep(1)
         except Exception as reason:
             return jsonAnswer(result=True)
         return jsonAnswer(error=telegram.token, relogin=True)
@@ -208,4 +215,4 @@ def runServer(config, statemanager, telegram):
             print("Failed exciting system: %s" % e)
     telegram.onTokenVerified = onTokenVerified
 
-    bottle.run(host=config.serverAddr, port=config.serverPort)
+    bottle.run(host=config.serverAddr, port=config.serverPort, server="gevent")

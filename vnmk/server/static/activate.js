@@ -1,20 +1,29 @@
+function fillQRCode(token){
+    new QRCode(
+        $("#qrcode").empty()[0],
+        ("https://t.me/neoatlantis_terminaldogma_bot?start=" + token)
+    )
+}
+
+
 function refreshQRCode(){
+    if($("#qrcode").attr("data-start")){
+        fillQRCode($("#qrcode").attr("data-start"));
+        $("#qrcode").removeAttr("data-start");
+        return refreshQRCode();
+    }
+
     $.ajax({
         url: "./activated",
         dataType: "json",
     }).done(function(data){
-        console.log(data);
         if(data.error && data.relogin){
-            new QRCode(
-                $("#qrcode").empty()[0],
-                ("https://t.me/neoatlantis_terminaldogma_bot?start="
-                + data.error)
-            )
+            fillQRCode(data.error);
         } else if(data.result == true) {
             window.location.reload();
         }
     }).always(function(){
-        setTimeout(refreshQRCode, 3000);
+        setTimeout(refreshQRCode, 1000);
     });
 }
 

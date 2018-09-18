@@ -1,6 +1,7 @@
 <html>
 <head>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta
     http-equiv="Content-Security-Policy"
     content="{{ meta_csp }}"
@@ -17,7 +18,7 @@
 <hr />
 
 <h3>Scan the QR Code to activate the system.</h3>
-<div id="qrcode"> </div>
+<div id="qrcode" data-start="{{ token }}"> </div>
 
 
 <script src="/static/activate.js"></script>

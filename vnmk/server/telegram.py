@@ -54,6 +54,7 @@ class TelegramAuthenticateBot:
         self.__tokenRotater = LoopTimer(self.__rotateToken, interval=30)
 
         self.onTokenVerified = lambda: None 
+        self.statemanager = None
 
     def __rotateToken(self):
         """Generates a new token for login, and revoke an old one."""
@@ -141,3 +142,4 @@ class TelegramAuthenticateBot:
                 pass
         finally:
             self.sending = False
+
