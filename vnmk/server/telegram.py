@@ -4,7 +4,9 @@ from threading import Thread, Timer
 import time
 import requests
 import os
+import shelve
 
+from .statemanager import SystemState
 from .looptimer import LoopTimer
 
 
@@ -49,12 +51,21 @@ class TelegramAuthenticateBot:
             lambda i: "https://api.telegram.org/bot%s/%s" % (config["token"], i)
         self.__pollNext = False
         self.__lastUpdateID = 0
+        self.__outgoingQueue = []
+        self.__outgoingQueuePurger = LoopTimer(
+            self.__purgeSendingQueue, interval=1)
 
         self.__recognizedTokens = []
         self.__tokenRotater = LoopTimer(self.__rotateToken, interval=30)
 
         self.onTokenVerified = lambda: None 
         self.statemanager = None
+
+        self.lastRemindState = SystemState.UNKNOWN 
+        self.__stateReminder = LoopTimer(self.__remindState, interval=30)
+        self.__excitedReminder = LoopTimer(self.__remindExcited, interval=300)
+        self.__groundReminder = LoopTimer(self.__remindGround, interval=21600)
+
 
     def __rotateToken(self):
         """Generates a new token for login, and revoke an old one."""
@@ -66,6 +77,26 @@ class TelegramAuthenticateBot:
     def token(self):
         return self.__recognizedTokens[-1]
 
+    def __composeMessage(self, receiverChatID, message):
+        self.__outgoingQueue.append({
+            "chat_id": receiverChatID,
+            "text": message,
+        })
+
+    def __purgeSendingQueue(self):
+        url = self.apiURL("sendMessage")
+        while self.__outgoingQueue:
+            message = self.__outgoingQueue.pop(0)
+            for i in range(0, 10):
+                try:
+                    req = requests.post(url, data=message)
+                    result = req.json()
+                    assert result["ok"]
+                    break
+                except Exception as e:
+                    print("Failed sending a message: %s" % e)
+                    time.sleep(5)
+
     def __processUpdateMessage(self, message):
         """
         {'message_id': 2, 'from': {'id': *****, 'is_bot': False,
@@ -75,7 +106,10 @@ class TelegramAuthenticateBot:
         ****, 'text': 'hi'}"""
         msgFrom = message["from"]
         msgChat = message["chat"]
-        if msgFrom["username"] not in self.config["users"]: return
+        if msgFrom["username"] not in self.config["users"]:
+            return
+        else:
+            self.recentChats[msgFrom["username"]] = msgChat["id"]
         if msgFrom["is_bot"]: return
         if msgChat["type"] != "private": return
         if "text" not in message: return
@@ -86,6 +120,9 @@ class TelegramAuthenticateBot:
             if token and token in self.__recognizedTokens:
                 print("Token is valid.")
                 self.onTokenVerified()
+                self.__composeMessage(msgChat["id"], "Your token is valid.")
+            else:
+                self.__composeMessage(msgChat["id"], "Token invalid. Try again.")
 
     def __pollUpdate(self):
         if not self.__pollNext: return
@@ -105,6 +142,7 @@ class TelegramAuthenticateBot:
             updates = json["result"]
         except Exception as e:
             print("Failed pulling updates from telegram. Wait 5 seconds...")
+            print(e)
             interval = 5
 
         for update in updates:
@@ -120,7 +158,51 @@ class TelegramAuthenticateBot:
             self.pollThread = Timer(interval, self.__pollUpdate)
             self.pollThread.start()
 
+
+    def __remindState(self):
+        """Trigger state reminding service."""
+        if not self.statemanager: return
+        newState = self.statemanager.reportState()
+        if newState == self.lastRemindState: return
+        
+        if newState == SystemState.EXCITED:
+            self.__excitedReminder.start()
+            self.__groundReminder.stop()
+        elif newState == SystemState.GROUND:
+            self.__excitedReminder.stop()
+            self.__groundReminder.start()
+        elif newState == SystemState.UNKNOWN:
+            self.__excitedReminder.stop()
+            self.__groundReminder.stop()
+        else:
+            for each in self.recentChats:
+                self.__composeMessage(
+                    self.recentChats[each], 
+                    "System decayed!"
+                )
+        self.lastRemindState = newState
+
+    def __remindExcited(self):
+        for each in self.recentChats:
+            self.__composeMessage(
+                self.recentChats[each], 
+                "System is excited!"
+            )
+
+    def __remindGround(self):
+        for each in self.recentChats:
+            self.__composeMessage(
+                self.recentChats[each], 
+                "System is in ground state."
+            )
+
+        
+        
+
     def __enter__(self, *args):
+        self.recentChats = shelve.open(self.config["cache"], writeback=True)
+        self.__stateReminder.start()
+        self.__outgoingQueuePurger.start()
         self.__tokenRotater.start()
         self.__pollNext = True
         self.pollThread = Thread(target=self.__pollUpdate)
@@ -128,18 +210,8 @@ class TelegramAuthenticateBot:
         return self
 
     def __exit__(self, *args):
+        self.recentChats.close()
+        self.__stateReminder.stop()
+        self.__outgoingQueuePurger.stop()
         self.__tokenRotater.stop()
         self.__pollNext = False
-
-    def __telegramSendMessage(self):
-        pass
-
-    def __sendMessage(self):
-        if self.sending: return
-        self.sending = True
-        try:
-            for i in range(0, 5):
-                pass
-        finally:
-            self.sending = False
-
