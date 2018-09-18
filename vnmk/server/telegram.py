@@ -67,9 +67,11 @@ class TelegramAuthenticateBot:
         self.__groundReminder = LoopTimer(self.__remindGround, interval=21600)
 
 
-    def __rotateToken(self):
+    def __rotateToken(self, purge=False):
         """Generates a new token for login, and revoke an old one."""
-        self.__recognizedTokens.append(os.urandom(16).hex())
+        count = 1 if not purge else 2
+        for i in range(0, count):
+            self.__recognizedTokens.append(os.urandom(16).hex())
         if len(self.__recognizedTokens) > 2:
             self.__recognizedTokens = self.__recognizedTokens[-2:]
 
@@ -121,6 +123,7 @@ class TelegramAuthenticateBot:
                 print("Token is valid.")
                 self.onTokenVerified()
                 self.__composeMessage(msgChat["id"], "Your token is valid.")
+                self.__rotateToken(purge=True)
             else:
                 self.__composeMessage(msgChat["id"], "Token invalid. Try again.")
 

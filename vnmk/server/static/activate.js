@@ -2,7 +2,11 @@ function fillQRCode(token){
     new QRCode(
         $("#qrcode").empty()[0],
         ("https://t.me/neoatlantis_terminaldogma_bot?start=" + token)
-    )
+    );
+    $("#qrcode").removeAttr("title");
+    $("#startcommand").val("/start " + token);
+    $("#botlink").attr(
+        "href", "https://t.me/neoatlantis_terminaldogma_bot?start=" + token);
 }
 
 
