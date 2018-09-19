@@ -1,0 +1,87 @@
+# 这是用来配置 VNMK 服务器的示例文件。
+#
+# 本文件使用 YAML 语言格式撰写，具体可通过下面的网址
+#   https://zh.wikipedia.org/wiki/YAML
+# 了解这一文件格式，很简单的！
+#
+# 要启动服务器，按照下面的说明修改配置文件，然后使用
+#
+#   python3 -m vnmk.server <PATH TO THIS YAML FILE> --init
+#
+#                                                   ^^^^^^
+#                                                   |
+#                      "--init" 选项必须出现在第一次运行的命令中，且不能
+#                      在之后的调用中存在。
+#
+# 使用 --init 选项，服务器将会（重新）初始化在 Firebase 中记载的数据，并将系统
+# 重置为基态。之后系统会停止运行，并要求您不带 --init 选项重新启动它。
+
+
+# 系统运行时 HTTP 服务器监听的地址
+server:
+    addr: localhost
+    port: 80
+
+# 机密信息文件的路径。在成功认证后将通过 HTTP 发布这一文件，如果认证失败，这一
+# 文件就会被删除。
+credential: credential/credential.test
+
+# 正确的认证密码。
+authcode: 123456 # 必须至少3个字符
+
+# 用户ID，这样登录的界面就变成类似 https://localhost/<userid>/ 的地址。
+userid: test
+
+# 基态和激发态的期限。如果系统处于这一状态的时间超出这一期限，就会删除机密信息。
+timeouts: 
+    ground: 604800    # 7 天，用于基态
+    excited: 3600     # 1 小时，用于激发态
+
+
+# 为了验证用户身份，您需要一个 Telegram 机器人帐号，和 Firebase 的一个项目。
+#
+# Telegram 用于第一步的激发。系统在没有激发之前，不会理会任何访问请求。这一过程
+# 保证用户可以了解所有当前进行中的登录尝试，以及系统的任何状态变化。
+#
+# Firebase 用于储存系统的状态，并提供第二步的身份认证。
+
+id-provider:
+    telegram:
+        cache: terminaldogma.cache
+        token: <这里输入Telegram机器人帐号的令牌(Token)>
+        users:
+            # 下面列出可以激活这个系统的用户ID
+            - <Your Telegram user id goes here>
+    firebase:
+        one-time-token: False
+        apikey: <这里输入Firebase的网页API>
+        users:
+            # 使用如下Email的用户才可以登录
+            - <Your Email No. 1 goes here>
+            - <Your Email No. 2 goes here>
+        
+
+firebase:
+    URL: https://<FIREBASE项目ID>.firebaseio.com/
+    credential:
+          # 下面输入 Firebase 的服务帐号信息。阅读如下网址，了解如何获得这些
+          # 信息。
+          #
+          #   https://firebase.google.com/docs/admin/setup
+          #
+          # 服务帐号信息本身为 JSON 格式，可以作为一个字符串粘贴在这里，也可以
+          # 如下，变为 YAML 格式依次配置。
+          
+          type: "service_account"
+          project_id: "<PROJECT ID>"
+          private_key_id: "<PRIVATE KEY ID>"
+          private_key: |
+                -----BEGIN PRIVATE KEY-----
+                <PRIVATE KEY...>
+                -----END PRIVATE KEY-----
+          client_email: ... 
+          client_id: ... 
+          auth_uri: "https://accounts.google.com/o/oauth2/auth"
+          token_uri: "https://oauth2.googleapis.com/token"
+          auth_provider_x509_cert_url: ...
+          client_x509_cert_url: ... 

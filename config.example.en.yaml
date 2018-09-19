@@ -1,0 +1,94 @@
+# This is an example file for configuring the VNMK server.
+#
+# This file is written in YAML format. Read
+#   https://en.wikipedia.org/wiki/YAML
+# to understand how it should be formatted...simple!
+#
+# To get started, change following configurations as you need. Then start the
+# server using:
+#
+#   python3 -m vnmk.server <PATH TO THIS YAML FILE> --init
+#
+#                                                   ^^^^^^
+#                                                   |
+#                      Option "--init" must be used for first call, and must
+#                      not be used for further calls.
+#
+# By using the "--init" option, server (re)initializes the entries in firebase,
+# and sets the system to GROUND state. The server then stops and asks you
+# to restart it without this option.
+
+
+# HTTP server which this system listens to.
+server:
+    addr: localhost
+    port: 80
+
+# Path to the credential file, which will be served over HTTP upon successful
+# authentication, or deleted upon authentication failure.
+credential: credential/credential.test
+
+# The correct authentication code.
+authcode: 123456 # Must be at least 3 characters!!
+
+# User id. Access to login page will be https://localhost/<userid>/
+userid: test
+
+# Timeouts for 2 states. Timing out without successful login results in
+# credential being destroyed.
+timeouts: 
+    ground: 604800    # 7 days 
+    excited: 3600     # 1 hour 
+
+
+
+# For authentication, you need both a Telegram bot and a Firebase setup.
+#
+# Telegram is used for Step 1 Activation, the system will not allow any access
+# when not in activated(excited) state. This process also guarantees the user
+# get informed via Telegram for any login attempt and further system state
+# updates.
+#
+# Firebase is used for persisting system state, and for user authentication
+# in Step 2.
+
+id-provider:
+    telegram:
+        cache: terminaldogma.cache
+        token: <Your token of Telegram bot goes here>
+        users:
+            # User IDs allowed to activate this system
+            - <Your Telegram user id goes here>
+    firebase:
+        one-time-token: False
+        apikey: <Your Firebase Web API key goes here>
+        users:
+            # Users with following Emails may login
+            - <Your Email No. 1 goes here>
+            - <Your Email No. 2 goes here>
+        
+
+firebase:
+    URL: https://<FIREBASE_PROJECT_ID>.firebaseio.com/
+    credential:
+          # Following is the details of a service account from Firebase.
+          # Read following URL for how to get its credentials:
+          #
+          #   https://firebase.google.com/docs/admin/setup
+          #
+          # The service account credential is a JSON, which may be pasted here
+          # wholely as a string, or, like follows, as YAML-formatted
+          # configuration.
+          type: "service_account"
+          project_id: "<PROJECT ID>"
+          private_key_id: "<PRIVATE KEY ID>"
+          private_key: |
+                -----BEGIN PRIVATE KEY-----
+                <PRIVATE KEY...>
+                -----END PRIVATE KEY-----
+          client_email: ... 
+          client_id: ... 
+          auth_uri: "https://accounts.google.com/o/oauth2/auth"
+          token_uri: "https://oauth2.googleapis.com/token"
+          auth_provider_x509_cert_url: ...
+          client_x509_cert_url: ... 

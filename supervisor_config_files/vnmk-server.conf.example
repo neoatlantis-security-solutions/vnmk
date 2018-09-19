@@ -1,0 +1,5 @@
+[program:vnmkserver]
+command=python3 -m vnmk.server <CONFIG YAML PATH>.yaml
+user=nobody
+autostart=true
+autorestart=true

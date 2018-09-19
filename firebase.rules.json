@@ -1,0 +1,10 @@
+/* Use below rules to set up your Firebase Realtime Database. */
+
+{
+  "rules": {
+    "$pid": {
+    	".read":  true,
+    	".write": "auth.uid === '__python-server__' "
+    }
+  }
+}
