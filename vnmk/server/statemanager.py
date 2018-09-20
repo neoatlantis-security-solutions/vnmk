@@ -68,7 +68,7 @@ class StateUpdater(LoopTimer):
         try:
             print("---- Sync new state...")
             newState["updated"] = newTime
-            db.reference("/%s/" % self.userid).set(newState)
+            db.reference("/state/%s/" % self.userid).set(newState)
             return exit(0)
         except Exception as e:
             print("---- Sync error: %s" % e)
@@ -110,7 +110,7 @@ class StateManager:
     TIMEOUT_EXCITED       = 3600
 
     def __ref(self, *args):
-        path = "/%s/" % self.userid + "/".join(args)
+        path = "/state/%s/" % self.userid + "/".join(args)
         return db.reference(path)
 
     @property

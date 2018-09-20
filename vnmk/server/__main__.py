@@ -24,7 +24,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-config = ConfigFile(args.config)
+config = ConfigFile(args.config, initMode=args.init)
 
 with\
     StateManager(config, creation=args.init) as statemanager,\

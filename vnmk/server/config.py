@@ -14,7 +14,7 @@ from firebase_admin import credentials
 
 class ConfigFile:
 
-    def __init__(self, filename):
+    def __init__(self, filename, initMode=False):
         read = yaml.load(open(filename, "r").read())
         self.DEBUG = read["debug"] if "debug" in read else False
         self.__credential = read["credential"]
@@ -26,16 +26,16 @@ class ConfigFile:
         self.groundStateTimeout = read["timeouts"]["ground"]
         self.excitedStateTimeout = read["timeouts"]["excited"]
 
-        self.firebase = self.__initFirebase(read["firebase"])
+        self.firebase = self.__initFirebase(read["firebase"], initMode)
         self.firebaseConfig = read["firebase"]
         self.ensureCredential()
 
-    def __initFirebase(self, firebaseConfig):
+    def __initFirebase(self, firebaseConfig, initMode=False):
         cred = credentials.Certificate(firebaseConfig["credential"])
         return firebase_admin.initialize_app(cred, {
             "databaseURL": firebaseConfig["URL"],
             'databaseAuthVariableOverride': {
-                'uid': '__python-server__'
+                'uid': '__python-server__' + ("/init" if initMode else ""),
             }
         })
 

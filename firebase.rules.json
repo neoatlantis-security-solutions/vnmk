@@ -1,10 +1,45 @@
 /* Use below rules to set up your Firebase Realtime Database. */
 
 {
-  "rules": {
-    "$pid": {
-    	".read":  true,
-    	".write": "auth.uid === '__python-server__' "
+    "rules": {
+
+        "state": {
+            "$_": {
+                ".read": true,
+                ".write": "
+                    auth.uid === '__python-server__' ||
+                    auth.uid === '__python-server__/init'
+                ",
+                "updated": { ".validate": "newData.val() < now" },
+                "decayed": {
+                    ".validate": "
+                        newData.isBoolean() &&
+                        (
+                            !data.exists() ||
+                            false == data.val() ||
+                            (auth.uid === '__python-server__/init')
+                        )
+                    "
+                },
+                "excited": { ".validate": "newData.isBoolean()" },
+                "creation": { ".validate": "newData.val() < now" },
+            	"$__": { ".validate": false }
+            }
+        },
+
+        "credential": {
+            "$uid": {
+                ".read":  "
+                    (auth != null && $uid === auth.uid) &&
+                    false == root.child('state').child($uid).child('decayed').val() &&
+                    (
+                        (now - root.child('state').child($uid).child('creation').val()) < 
+                        (true == root.child('state').child($uid).child('excited').val() ? 3600000 : 604800000)
+                    )
+                ",
+                ".write": "auth.uid === $uid && true == auth.token.initializing",
+                ".validate": "newData.isString() && newData.val().length < 10240"
+            }
+        }
     }
-  }
 }
