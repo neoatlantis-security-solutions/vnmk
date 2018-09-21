@@ -27,7 +27,7 @@ args = parser.parse_args()
 config = ConfigFile(args.config, initMode=args.init)
 
 with\
-    StateManager(config, creation=args.init) as statemanager,\
+    StateManager(config) as statemanager,\
     TelegramAuthenticateBot(config.idProviders["telegram"]) as telegram \
 :
     runServer(config, statemanager=statemanager, telegram=telegram)

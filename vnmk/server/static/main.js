@@ -82,12 +82,14 @@ function onLogin(){
 
     firebase.auth().currentUser.getIdToken(true)
     .then(function(idToken){
+        // prepare for login with our server 
         return {
             type: "firebase", 
             data: idToken,
         };
     })
     .then(function(authdata){
+        // send login data
         return $.ajax({
             url: "./validate",
             method: "POST",
@@ -106,13 +108,24 @@ function onLogin(){
             if(true == answer.relogin){
                 onReloginRequired();
             }
-            return;
+            throw answer.error;
         }
+        return answer.result;
+    })
+    .then(function(credentials){
+        var newToken = credentials.token,
+            credential = credentials.credential;
         $("body")
             .removeClass("status-not-authenticated")
             .addClass("status-authenticated")
         ;
-        initResult(answer.result);
+        initResult(credential);
+        return firebase.auth().signOut().then(function(){
+            return firebase.auth().signInWithCustomToken(newToken);
+        });
+    })
+    .then(function(){
+        console.log(arguments);
     })
     .then(function(){
         $("#login").attr("disabled", false);

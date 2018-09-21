@@ -26,7 +26,9 @@ HEADER_EXCITED_CSP = " ".join([
     "*.firebase.com",
     "*.googleapis.com",
     "*.firebaseapp.com",
-    "*.firebaseio.com"
+    "*.firebaseio.com",
+    "connect-src",
+    "wss://*.firebaseio.com",
 ])
 
 HEADER_GROUND_CSP = " ".join([
@@ -55,13 +57,13 @@ def runServer(config, statemanager, telegram):
         if currentState == SystemState.UNKNOWN:
             raise Exception("Server network error.")
         if currentState == SystemState.DECAYED:
-            config.destroyCredential()
+            config.credential.destroy()
             raise Exception("Credential destroyed due to session timeout.")
         if currentState not in states:
             raise Exception("Please (re-)login with website UI.")
         if ensureCredential:
             # Ensure credential accessible & destroyable
-            config.ensureCredential()
+            config.credential.ensure()
         return currentState
 
     # ---- Serves static files
@@ -154,14 +156,18 @@ def runServer(config, statemanager, telegram):
             print("Access code valid. Releasing credential...")
             try:
                 statemanager.createState(SystemState.GROUND)
-                return jsonAnswer(result=config.releaseCredential())
+                customizedToken = config.firebase.issueCustomToken()
+                return jsonAnswer(result={
+                    "token": customizedToken,
+                    "credential": config.credential.release()
+                })
             except Exception as e:
                 print("Failed releasing credential. %s" % e)
                 return jsonAnswer(error=str(e))
         else:
             print("Access code invalid. Destroy credential!")
             statemanager.createState(SystemState.DECAYED)
-            config.destroyCredential()
+            config.credential.destroy()
             return jsonAnswer(
                 error="Credential destroyed due to invalid access code.")
         

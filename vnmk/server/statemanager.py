@@ -17,6 +17,9 @@ from .looptimer import LoopTimer
 
 
 class SystemState(Enum):
+    # Initialization mode, the user is allowed to upload credential to
+    # firebase server.
+    INIT = -1
     # State cannot be determined/recorded reliably, e.g. due to network error.
     # By returning this state, the server shall lock down and not accept
     # any interaction.
@@ -117,29 +120,28 @@ class StateManager:
     def stateCreationTime(self):
         return self.stateUpdater.creation
 
-    def __init__(self, config, creation=False):
+    def __init__(self, config):
         """Stores server status on disk."""
         assert isinstance(config, ConfigFile)
+        self.config = config
         self.userid = config.userID
         self.TIMEOUT_GROUND = config.groundStateTimeout
         self.TIMEOUT_EXCITED = config.excitedStateTimeout
 
         self.firebase = config.firebase
         try:
-            if creation:
-                self.initDatabase()
-                raise Exception(
-                    "Database (re)initialized. " + \
-                    "Please remove the --init option and run again.")
+            if config.initMode:
+                self.stateUpdater = StateUpdater(
+                    self.userid, initState=self.initDatabase())
             else:
-                initData = self.__ref().get()
-                if not initData:
+                initState = self.__ref().get()
+                if not initState:
                     raise Exception(
                         "Data for this user does not exist. " +\
                         "Creation not allowed. Use --init option to run again."
                     )
                 else:
-                    self.stateUpdater = StateUpdater(self.userid, initData)
+                    self.stateUpdater = StateUpdater(self.userid, initState)
         except Exception as e:
             raise Exception(e)
 
@@ -161,6 +163,8 @@ class StateManager:
         # NOTE this method SHALL be called before server may answer anything to
         # user. If this method fails, no record could be made.
         # TODO what if resuming from EXCITED to GROUND is temp. not possible?
+        if self.config.initMode:
+            raise Exception("Cannot create new state in INIT mode.")
         assert newState in [
             SystemState.EXCITED,
             SystemState.GROUND,
@@ -185,6 +189,7 @@ class StateManager:
 
     def recalculateState(self):
         """Recalculate server state. See if timed out!"""
+        if self.config.initMode: return SystemState.INIT
         nowtime = time.time()
         creation = self.stateUpdater.creation
         excited  = self.stateUpdater.excited

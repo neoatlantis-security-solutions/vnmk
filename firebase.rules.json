@@ -10,7 +10,7 @@
                     auth.uid === '__python-server__' ||
                     auth.uid === '__python-server__/init'
                 ",
-                "updated": { ".validate": "newData.val() < now" },
+                "updated": { ".validate": "newData.val() * 1000 < now" },
                 "decayed": {
                     ".validate": "
                         newData.isBoolean() &&
@@ -22,7 +22,7 @@
                     "
                 },
                 "excited": { ".validate": "newData.isBoolean()" },
-                "creation": { ".validate": "newData.val() < now" },
+                "creation": { ".validate": "newData.val() * 1000 < now" },
             	"$__": { ".validate": false }
             }
         },
@@ -31,14 +31,16 @@
             "$uid": {
                 ".read":  "
                     (auth != null && $uid === auth.uid) &&
+                    true == auth.token.customized &&
+                    false == auth.token.initializing && // Write-only in initialization mode
                     false == root.child('state').child($uid).child('decayed').val() &&
                     (
-                        (now - root.child('state').child($uid).child('creation').val()) < 
+                        (now - root.child('state').child($uid).child('creation').val() * 1000) < 
                         (true == root.child('state').child($uid).child('excited').val() ? 3600000 : 604800000)
                     )
                 ",
-                ".write": "auth.uid === $uid && true == auth.token.initializing",
-                ".validate": "newData.isString() && newData.val().length < 10240"
+                ".write": "auth.uid === '__python-server__/init'",
+                ".validate": "newData.isString() && newData.val().length == 64"
             }
         }
     }
