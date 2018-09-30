@@ -1,5 +1,6 @@
 __pycache__
 *.sw?
+*.log
 *.pyc
 *.journal
 *.cache
