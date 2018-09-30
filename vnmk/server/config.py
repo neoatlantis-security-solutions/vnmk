@@ -17,7 +17,12 @@ class ConfigFile:
     def __init__(self, filename, initMode=False):
         read = yaml.load(open(filename, "r").read())
         self.DEBUG = read["debug"] if "debug" in read else False
-        self.credentialPath = read["credential"]
+
+        basedir = os.path.realpath(os.path.dirname(filename))
+        workdir = os.path.join(basedir, read["workdir"])
+        self.workdir = lambda *d: os.path.join(workdir, *d)
+
+        self.credentialPath = self.workdir("credential.txt")
         self.initMode = initMode
         self.serverPort = read["server"]["port"]
         self.serverAddr = read["server"]["addr"]

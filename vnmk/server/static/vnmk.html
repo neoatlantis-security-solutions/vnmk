@@ -9,12 +9,15 @@
 <script src="/static/jquery.min.js"></script>
 <script src="/static/firebase.js"></script>
 <script src="/static/firebaseui.js"></script>
+<script src="/static/nacl.min.js"></script>
+<script src="/static/nacl-util.min.js"></script>
 <script src="/static/openpgp.min.js"></script>
 <link type="text/css" rel="stylesheet" href="/static/firebaseui.css" />
 
 <script id="config" type="application/json">
 {
     "session_timeout": {{ session_timeout }},
+    "userid": "{{ user_id }}",
     "firebase": {
         "apiKey": "{{ firebase_api_key }}",
         "authDomain": "{{ firebase_project_id }}.firebaseapp.com",

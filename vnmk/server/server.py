@@ -27,8 +27,11 @@ HEADER_EXCITED_CSP = " ".join([
     "*.googleapis.com",
     "*.firebaseapp.com",
     "*.firebaseio.com",
+    ";",
     "connect-src",
+    "'self'",
     "wss://*.firebaseio.com",
+    "https://*.googleapis.com",
 ])
 
 HEADER_GROUND_CSP = " ".join([
@@ -103,6 +106,7 @@ def runServer(config, statemanager, telegram):
         return renderTemplate(
             "vnmk.html",
             meta_csp=HEADER_EXCITED_CSP,
+            user_id=config.userID,
             session_timeout=\
                 statemanager.stateCreationTime + config.excitedStateTimeout,
             firebase_project_id=\

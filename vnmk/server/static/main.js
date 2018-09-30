@@ -102,7 +102,6 @@ function onLogin(){
         });
     })
     .then(function(answer){
-        console.log(answer);
         if(answer.error){
             $("#error").text(answer.error);
             if(true == answer.relogin){
@@ -119,13 +118,18 @@ function onLogin(){
             .removeClass("status-not-authenticated")
             .addClass("status-authenticated")
         ;
-        initResult(credential);
+        prepareResult(credential);
         return firebase.auth().signOut().then(function(){
             return firebase.auth().signInWithCustomToken(newToken);
         });
     })
-    .then(function(){
-        console.log(arguments);
+    .then(function(){ // get remote decrypt key
+        var r = firebase.database().ref("/credential/" + config.userid + "/");
+        return r.once("value");
+    })
+    .then(function(result){ // on remote decrypt key retrieved
+        console.log(result.val());
+        unlockResult(result.val());
     })
     .then(function(){
         $("#login").attr("disabled", false);
@@ -137,6 +141,7 @@ function onLogin(){
 $("button#login").click(onLogin);
 
 
+//----------------------------------------------------------------------------
 // After successful authentication.
 
 function isPGPMessage(text){
@@ -151,7 +156,17 @@ function isPGPMessage(text){
     return false;
 }
 
-function initResult(result){
+function prepareResult(result){
+    $("#credential").text(result);
+}
+
+function unlockResult(remoteEncryptKey){
+    var key = nacl.util.decodeBase64(remoteEncryptKey),
+        ciphertext = nacl.util.decodeBase64($("#credential").text());
+    var nonce = ciphertext.slice(0, nacl.secretbox.nonceLength),
+        ciphertext = ciphertext.slice(nacl.secretbox.nonceLength);
+    var result = nacl.secretbox.open(ciphertext, nonce, key);
+    result = nacl.util.encodeUTF8(result);
     $("#credential").text(result);
     if(isPGPMessage(result)){
         $("#decrypt-prompt").show();

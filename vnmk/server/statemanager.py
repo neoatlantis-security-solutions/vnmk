@@ -147,7 +147,7 @@ class StateManager:
 
     def initDatabase(self):
         print("Initialize database...")
-        data = {        
+        data = {
             "creation": time.time(),
             "updated": time.time(),
             "excited": False,
@@ -224,11 +224,13 @@ class StateManager:
             return SystemState.UNKNOWN
 
     def __enter__(self, *args):
+        if self.config.initMode: return self
         self.timer = LoopTimer(self.heartbeat, self.HEARTBEAT_INTERVAL)
         self.timer.start()
         self.stateUpdater.start()
         return self
 
     def __exit__(self, *args):
+        if self.config.initMode: return
         self.timer.stop()
         self.stateUpdater.stop()

@@ -3,3 +3,4 @@ bottle
 firebase_admin
 requests
 PyYAML
+PyNacl

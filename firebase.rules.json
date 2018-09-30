@@ -40,7 +40,7 @@
                     )
                 ",
                 ".write": "auth.uid === '__python-server__/init'",
-                ".validate": "newData.isString() && newData.val().length == 64"
+                ".validate": "newData.isString() && newData.val().length <= 64"
             }
         }
     }

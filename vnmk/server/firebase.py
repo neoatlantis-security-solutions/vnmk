@@ -32,7 +32,10 @@ class Firebase:
             raise Exception(
                 "Resetting remote encrypt key only works within INIT mode.")
         try:
+            print("Try to reset user remote encrypt key...")
             db.reference("/credential/%s" % self.config.userID).set(key)
             return True
-        except:
+        except Exception as e:
+            print(e)
             return False
+        return False
