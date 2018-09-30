@@ -128,7 +128,6 @@ function onLogin(){
         return r.once("value");
     })
     .then(function(result){ // on remote decrypt key retrieved
-        console.log(result.val());
         unlockResult(result.val());
     })
     .then(function(){
