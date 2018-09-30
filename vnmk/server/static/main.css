@@ -29,6 +29,11 @@ body.status-not-authenticated .authenticated { display: none }
 body.status-authenticated .not-authenticated { display: none }
 body.status-authenticated .authenticated { display: block }
 
+.authenticated.status-locked .locked { display: block }
+.authenticated.status-locked .unlocked { display: none }
+.authenticated.status-unlocked .unlocked { display: block }
+.authenticated.status-unlocked .locked { display: none }
+
 input.plain{
     border: none;
     font-family: monospace;

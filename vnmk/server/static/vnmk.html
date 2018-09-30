@@ -74,14 +74,20 @@
 
 </div>
 
-<div class="authenticated">
-    <pre id="credential"></pre>
+<div class="authenticated status-locked">
+    <div class="locked">
+        Your credential will be decrypted...
+    </div>
 
-    <div id="decrypt-prompt">
-        <hr />
-        Decrypt with password:
-        <input type="password" id="password" />
-        <button id="decrypt">Decrypt</button>
+    <div class="unlocked">
+        <pre id="credential"></pre>
+
+        <div id="decrypt-prompt">
+            <hr />
+            Decrypt with password:
+            <input type="password" id="password" />
+            <button id="decrypt">Decrypt</button>
+        </div>
     </div>
 </div>
 

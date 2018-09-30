@@ -166,7 +166,9 @@ function unlockResult(remoteEncryptKey){
         ciphertext = ciphertext.slice(nacl.secretbox.nonceLength);
     var result = nacl.secretbox.open(ciphertext, nonce, key);
     result = nacl.util.encodeUTF8(result);
-    $("#credential").text(result);
+    $(".authenticated")
+        .removeClass("status-locked").addClass("status-unlocked");
+    $("#credential").text(result).show();
     if(isPGPMessage(result)){
         $("#decrypt-prompt").show();
     } else {
