@@ -3,8 +3,10 @@
 import subprocess
 import time
 import argparse
+import os
 
 from .kiosk import getCredential
+from.actions.fifo import serveAsFIFO
 
 # ----------------------------------------------------------------------------
 
@@ -23,7 +25,19 @@ parser.add_argument(
     action="store_true"
 )
 
+actions = parser.add_mutually_exclusive_group(required=True)
+actions.add_argument("--as-file", metavar="FILE")
+
+
+# ----------------------------------------------------------------------------
+
 args = parser.parse_args()
+
+if args.as_file and os.path.exists(args.as_file):
+    print("Error: [%s] exists. Cannot serve at that location." % args.as_file)
+    exit(1)
+
+# ----------------------------------------------------------------------------
 
 DEBUG = args.debug
 if DEBUG:
@@ -53,4 +67,7 @@ if not args.not_gpg:
     process = subprocess.Popen(["gpg"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     credential = process.communicate(input=credential)[0]
 
-    print(credential)
+assert type(credential) == bytes
+
+if args.as_file:
+    serveAsFIFO(credential, args.as_file)
