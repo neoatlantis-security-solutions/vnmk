@@ -39,7 +39,13 @@
                         (true == root.child('state').child($uid).child('excited').val() ? 3600000 : 604800000)
                     )
                 ",
-                ".write": "auth.uid === '__python-server__/init'",
+                ".write": "
+                    auth.uid === '__python-server__/init' ||
+                    (
+                        auth.uid === '__python-server__' &&
+                        true == root.child('state').child($uid).child('decayed').val()
+                    )
+                ",
                 ".validate": "newData.isString() && newData.val().length <= 64"
             }
         }

@@ -28,9 +28,6 @@ class Firebase:
 
     def resetCredentialRemoteEncryptKey(self, key):
         assert type(key) == str
-        if not self.config.initMode:
-            raise Exception(
-                "Resetting remote encrypt key only works within INIT mode.")
         try:
             print("Try to reset user remote encrypt key...")
             db.reference("/credential/%s" % self.config.userID).set(key)
@@ -39,3 +36,6 @@ class Firebase:
             print(e)
             return False
         return False
+
+    def destroyRemoteEncryptKey(self):
+        self.resetCredentialRemoteEncryptKey("")

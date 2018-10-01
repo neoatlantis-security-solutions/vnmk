@@ -21,19 +21,21 @@ class CredentialManager:
         remoteEncryptKey = os.urandom(32).hex()
 
     def destroy(self):
-        try:
-            subprocess.run(["wipe", "-fc", self.config.credentialPath])
-        except:
-            pass
-        try:
-            os.unlink(self.config.credentialPath)
-        except:
-            pass
         if os.path.isfile(self.config.credentialPath):
             try:
-                open(self.config.credentialPath, "w")
+                subprocess.run(["wipe", "-fc", self.config.credentialPath])
             except:
                 pass
+            try:
+                os.unlink(self.config.credentialPath)
+            except:
+                pass
+            if os.path.isfile(self.config.credentialPath):
+                try:
+                    open(self.config.credentialPath, "w")
+                except:
+                    pass
+        self.config.firebase.destroyRemoteEncryptKey()
 
     def encryptCredential(self, key, data):
         """Credential will be only encrypted here. Decryption is done via

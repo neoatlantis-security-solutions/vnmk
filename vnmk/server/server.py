@@ -84,7 +84,9 @@ def runServer(config, statemanager, telegram):
 
         try:
             currentState = ensureServerState(
-                SystemState.GROUND, SystemState.EXCITED)
+                SystemState.GROUND, SystemState.EXCITED,
+                ensureCredential=False
+            )
         except Exception as reason:
             return renderTemplate("error.html", description=str(reason))
 
