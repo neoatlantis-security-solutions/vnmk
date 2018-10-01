@@ -18,6 +18,9 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument(
+    "user_id", metavar="USER_ID", help="Your user id at remote location.")
+
+parser.add_argument(
     "--debug", help="Debug mode. Just DO NOT use this.", action="store_true")
 parser.add_argument(
     "--not-gpg", help="Do not process the retrieved credential via GPG.",
@@ -52,7 +55,7 @@ PXSHr/PR9odA2ehtIxhnr35V9silSoes7w49y4Q=
 -----END PGP MESSAGE-----
         """
 else:
-    credential = getCredential("test")
+    credential = getCredential(args.user_id)
 
 if not credential:
     print("Aborted.")

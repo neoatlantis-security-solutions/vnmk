@@ -56,6 +56,10 @@ function onFirebaseAuth(authResult){
 
 setInterval(function(){
     var countdown = sessionTimeout - new Date().getTime() / 1000;
+    if(countdown < 0){
+        window.location.reload();
+        return;
+    }
     $("#countdown").text(countdown.toFixed(0));
 }, 500);
 
