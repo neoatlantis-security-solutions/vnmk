@@ -205,7 +205,8 @@ class StateManager:
         else:
             timedout = ((nowtime - creation) > self.TIMEOUT_GROUND)
         if timedout:
-            self.stateUpdater.set("decayed", True)
+            self.createState(SystemState.DECAYED)
+#            self.stateUpdater.set("decayed", True)
             print("State timed out! Decay now!")
             return SystemState.DECAYED
         return SystemState.EXCITED if excited else SystemState.GROUND
