@@ -48,6 +48,50 @@
 服务器上的机密信息本身可以是经过对称加密（口令加密）的OpenPGP密文，
 这样最终的解密在用户的浏览器上进行，即使服务器上的托管信息泄露，也不会暴露原文。
 
+## 配置方法
+
+要使用本系统，您需要一个单独的服务器（这个服务器上将存储加密过的数据主体），
+以及一个Google帐号（用于使用Google的Firebase服务）。
+
+### Firebase
+
+访问 [https://console.firebase.google.com](https://console.firebase.google.com)
+建立您的项目。请参考Google文档了解如何进行。
+
+您需要为项目启用**身份验证**和**实时数据库**功能。
+
+* 身份验证，可以配置启用Google登录和Github登录。
+* 实时数据库中的规则，使用`firebase.rules.json`文件的内容。
+
+此后您需要建立一个服务账号，并下载相应的密钥，用于独立服务器配置。
+
+### 独立服务器
+
+在独立服务器上，请在合适的位置利用`git clone`获得本项目的备份。
+
+```
+$ git clone https://github.com/neoatlantis-security-solutions/vnmk
+$ cd vnmk
+```
+
+在`vnmk`目录中，您可以使用`python3 -m vnmk.server <配置文件.yaml>`
+这样的方式来启动服务器。但为了初始化服务器的状态，还需要一些额外的工作。
+
+#### 初始化服务器状态
+
+首先您需要根据`config.example.zh.yaml`这个模板，建立自己的配置文件。
+
+然后，使用
+
+```
+$ python3 -m vnmk.server <配置文件.yaml> --init <机密信息文件>
+```
+
+这种方式，
+
+
+
+
 ---
 
 Volatile Non-Memorable Key System

@@ -24,9 +24,11 @@ server:
     addr: localhost
     port: 80
 
-# Path to the credential file, which will be served over HTTP upon successful
-# authentication, or deleted upon authentication failure.
-credential: credential/credential.test
+# Working directory. Credential file will be stored under this path. You have
+# to ensure this directory have r+x permission, so that the credential file
+# may be deleted at any time. Failure to do so will cause refusal of releasing
+# a credential.
+workdir: credential/
 
 # The correct authentication code.
 authcode: 123456 # Must be at least 3 characters!!
@@ -36,9 +38,12 @@ userid: test
 
 # Timeouts for 2 states. Timing out without successful login results in
 # credential being destroyed.
+# Attention! Firebase rules also include both constants, please modify that
+#            to match this. Remember that in Firebase time is based in
+#            milliseconds, so you need to multiply 1000 with below numbers.
 timeouts: 
-    ground: 604800    # 7 days 
-    excited: 3600     # 1 hour 
+    ground: 604800    # seconds, = 7 days, for ground state
+    excited: 3600     # seconds, = 1 hour, for excited state
 
 
 

@@ -45,10 +45,13 @@ class TelegramAuthenticateBot:
         """Sends information about system status via Telegram. This class
         checks for system status every 1 minute, and will remind the user
         of excited status every 5 minutes from the first excitation."""
-        self.config = config
+        self.cachePath = config.workdir("telegram.cache")
+        self.config = config.idProviders["telegram"]
+
         self.sending = False
         self.apiURL = \
-            lambda i: "https://api.telegram.org/bot%s/%s" % (config["token"], i)
+            lambda i: "https://api.telegram.org/bot%s/%s" % (
+                self.config["token"], i)
         self.__pollNext = False
         self.__lastUpdateID = 0
         self.__outgoingQueue = []
@@ -203,7 +206,7 @@ class TelegramAuthenticateBot:
         
 
     def __enter__(self, *args):
-        self.recentChats = shelve.open(self.config["cache"], writeback=True)
+        self.recentChats = shelve.open(self.cachePath, writeback=True)
         self.__stateReminder.start()
         self.__outgoingQueuePurger.start()
         self.__tokenRotater.start()

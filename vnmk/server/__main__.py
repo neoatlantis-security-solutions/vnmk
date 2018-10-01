@@ -33,16 +33,5 @@ with StateManager(config) as statemanager:
     if config.initMode:
         initialize(config, statemanager=statemanager, credentialPath=args.init)
     else:
-        with TelegramAuthenticateBot(config.idProviders["telegram"]) as telegram:
+        with TelegramAuthenticateBot(config) as telegram:
             runServer(config, statemanager=statemanager, telegram=telegram)
-
-"""
-with\
-    StateManager(config) as statemanager,\
-    TelegramAuthenticateBot(config.idProviders["telegram"]) as telegram \
-:
-    if config.initMode:
-        initialize(config, statemanager=statemanager, credentialPath=args.init)
-    else:
-        runServer(config, statemanager=statemanager, telegram=telegram)
-"""
