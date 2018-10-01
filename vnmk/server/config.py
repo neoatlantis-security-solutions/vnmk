@@ -10,12 +10,17 @@ import time
 
 from .firebase import Firebase
 from .credential import CredentialManager
+from .gpgdecrypt import GPGDecrypt
 
 
 class ConfigFile:
 
     def __init__(self, filename, initMode=False):
-        read = yaml.load(open(filename, "r").read())
+        if filename.endswith(".gpg"):
+            configYAML = GPGDecrypt(filename)
+        else:
+            configYAML = open(filename, "r").read()
+        read = yaml.load(configYAML)
         self.DEBUG = read["debug"] if "debug" in read else False
 
         basedir = os.path.realpath(os.path.dirname(filename))

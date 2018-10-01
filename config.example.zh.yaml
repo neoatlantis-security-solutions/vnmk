@@ -49,7 +49,6 @@ timeouts:
 
 id-provider:
     telegram:
-        cache: terminaldogma.cache
         token: <这里输入Telegram机器人帐号的令牌(Token)>
         users:
             # 下面列出可以激活这个系统的用户ID

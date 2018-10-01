@@ -34,5 +34,10 @@ def initialize(config, statemanager, credentialPath):
 
     if config.firebase.resetCredentialRemoteEncryptKey(encodedREK):
         print("System state reset successful.")
+        print("Credential encrypted as follows.")
+        print("----")
+        print(encryptedCredential)
+        print("----")
+        print("You may deploy this credential manually to the server.")
     else:
         print("System state reset failed. Please do that again.")

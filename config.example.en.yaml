@@ -59,7 +59,6 @@ timeouts:
 
 id-provider:
     telegram:
-        cache: terminaldogma.cache
         token: <Your token of Telegram bot goes here>
         users:
             # User IDs allowed to activate this system
