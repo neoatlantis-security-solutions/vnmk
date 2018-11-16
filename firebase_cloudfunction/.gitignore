@@ -1,0 +1,4 @@
+node_modules/
+.firebaserc
+*-lock.json
+*.log

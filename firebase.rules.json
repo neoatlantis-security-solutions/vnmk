@@ -1,53 +1,23 @@
-/* Use below rules to set up your Firebase Realtime Database. */
+{ "rules": {
+    "$uid": {
+        ".read": false,
 
-{
-    "rules": {
-
-        "state": {
-            "$uid": {
-                ".read": true,
-                ".write": "
-                    auth.uid === '__python-server__' ||
-                    auth.uid === '__python-server__/init'
-                ",
-                "updated": { ".validate": "newData.val() * 1000 < now" },
-                "decayed": {
-                    ".validate": "
-                        newData.isBoolean() &&
-                        (
-                            !data.exists() ||
-                            false == data.val() ||
-                            (auth.uid === '__python-server__/init')
-                        )
-                    "
-                },
-                "excited": { ".validate": "newData.isBoolean()" },
-                "creation": { ".validate": "newData.val() * 1000 < now" },
-            	"$__": { ".validate": false }
-            }
+        "user": {
+            ".write": "auth.uid !== null && $uid == auth.uid",
+            "authcode": {
+                ".validate": "newData.isString() && newData.val().length < 100"
+            },
+            "secret": {
+                ".validate": "newData.isString() && newData.val().length < 2048"
+            },
+            "$_": { ".validate": false }
+        },
+        
+        "service": {
+            ".write": false,
+            "$_": { ".validate": false }
         },
 
-        "credential": {
-            "$uid": {
-                ".read":  "
-                    (auth != null && $uid === auth.uid) &&
-                    true == auth.token.customized &&
-                    false == auth.token.initializing && // Write-only in initialization mode
-                    false == root.child('state').child($uid).child('decayed').val() &&
-                    (
-                        (now - root.child('state').child($uid).child('creation').val() * 1000) < 
-                        (true == root.child('state').child($uid).child('excited').val() ? 3600000 : 604800000)
-                    )
-                ",
-                ".write": "
-                    auth.uid === '__python-server__/init' ||
-                    (
-                        auth.uid === '__python-server__' &&
-                        true == root.child('state').child($uid).child('decayed').val()
-                    )
-                ",
-                ".validate": "newData.isString() && newData.val().length <= 64"
-            }
-        }
+        "$_": { ".validate": false }
     }
-}
+} }
