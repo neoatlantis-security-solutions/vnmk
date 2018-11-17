@@ -1,0 +1,37 @@
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta
+    http-equiv="Content-Security-Policy"
+    content="{{ meta_csp }}"
+>
+
+<script src="/static/jquery.min.js"></script>
+<script src="/static/qrcode.min.js"></script>
+
+<link type="text/css" rel="stylesheet" href="/static/main.css" />
+
+</head>
+
+<h1> NeoAtlantis Terminal Dogma Access </h1>
+<hr />
+
+<h3>Scan the QR Code to activate the system.</h3>
+<div id="qrcode" data-start="{{ token }}"> </div>
+<div>
+<br />
+Alternatively, send <br />
+<input type="text" readonly id="startcommand" class="plain"/><br />
+via
+Telegram Bot
+<a href="https://t.me/neoatlantis_terminaldogma_bot" id="botlink" target="_blank">
+@neoatlantis_terminaldogma_bot
+</a>
+.
+</div>
+
+
+<script src="/static/activate.js"></script>
+</body>
+</html>

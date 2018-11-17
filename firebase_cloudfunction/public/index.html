@@ -1,0 +1,111 @@
+<html>
+<head>
+
+<title>NeoAtlantis Terminal Dogma</title>
+
+<!-- update the version number as needed -->
+<script src="/__/firebase/5.5.8/firebase-app.js"></script>
+<!-- include only the Firebase features as you need -->
+<script src="/__/firebase/5.5.8/firebase-auth.js"></script>
+<script src="/__/firebase/5.5.8/firebase-functions.js"></script>
+<script src="/__/firebase/5.5.8/firebase-database.js"></script>
+<!-- initialize the SDK after all desired features are loaded -->
+<script src="/__/firebase/init.js"></script>
+
+<script src="https://cdn.firebase.com/libs/firebaseui/3.4.1/firebaseui.js"></script>
+<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.4.1/firebaseui.css" />
+
+<script src="/static/jquery.min.js"></script>
+<script src="/static/nacl.min.js"></script>
+<script src="/static/nacl-util.min.js"></script>
+<script src="/static/openpgp.min.js"></script>
+<link type="text/css" rel="stylesheet" href="/static/firebaseui.css" />
+<link type="text/css" rel="stylesheet" href="/static/main.css" />
+
+</head>
+<body class="status-not-authenticated">
+
+<h1> NeoAtlantis Terminal Dogma Access </h1>
+<hr />
+
+<div class="not-authenticated status-logout">
+
+    <div class="logout">
+        <h3>Please authenticate yourself by one of following providers.</h3>
+        <!--<div id="telegram">
+            <script 
+                async src="https://telegram.org/js/telegram-widget.js?4"
+                data-telegram-login="neoatlantis_terminaldogma_bot" data-size="large"
+                data-onauth="onTelegramAuth(user)"></script>
+        </div>-->
+        <div id="firebase">
+            <div id="firebaseui-auth-container"></div>
+        </div>
+    </div>
+
+    <div class="login">
+        <h3>Type in your access code</h3>
+        <div>
+            <div id="firebase-result"></div>
+            <input type="password" id="accesscode" />
+        </div>
+
+        <h3>within <span id="countdown"></span> seconds.</h3>
+        <div>
+        This countdown can only be stopped by a successful authentication.
+        When otherwise timed out, access will be denied permanently.
+        </div>
+
+        <hr />
+        <div id="error"></div>
+        <div>
+            <button type="button" id="login" disabled autocomplete="off">
+                <strong>Request Access</strong>
+                <div>
+                    <br />
+                    You will have only one chance requesting this access. <br />
+                    Any failed attempt results in irreversible lost of your data.
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="update">
+        <h3>Burn in new credential</h3>
+        <div>If you are new user, or your data was cleared due to previous
+        login failure, or you are just changing credential...<br />just use
+        this function to burn in new data.</div>
+        <div><textarea id="newcredential"></textarea></div>
+        <div>
+            Specify an authentication code:
+            <input id="newauthcode" type="password"/>
+        </div>
+        <div>
+            Type in above code again:
+            <input id="newauthcode2" type="password"/>
+        </div>
+        <div><button id="update-credential">Update</button></div>
+    </div>
+
+</div>
+
+<div class="authenticated status-locked">
+    <div class="locked">
+        Your credential will be decrypted...
+    </div>
+
+    <div class="unlocked">
+        <pre id="credential"></pre>
+
+        <div id="decrypt-prompt">
+            <hr />
+            Decrypt with password:
+            <input type="password" id="password" />
+            <button id="decrypt">Decrypt</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/main.js"></script>
+</body>
+</html>
