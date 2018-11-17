@@ -170,7 +170,7 @@ function prepareResult(result){
         .addClass("status-unlocked")
     ;
 
-    $("#credential").text(result).show();
+    $("#credential").text(result).attr("data-unlocked", "1").show();
     if(isPGPMessage(result)){
         $("#decrypt-prompt").show();
     } else {

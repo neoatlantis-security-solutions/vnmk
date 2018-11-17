@@ -17,8 +17,8 @@ parser = argparse.ArgumentParser(
     the credential will be fetched by this client, providing further use."""
 )
 
-parser.add_argument(
-    "user_id", metavar="USER_ID", help="Your user id at remote location.")
+#parser.add_argument(
+#    "user_id", metavar="USER_ID", help="Your user id at remote location.")
 
 parser.add_argument(
     "--debug", help="Debug mode. Just DO NOT use this.", action="store_true")
@@ -55,7 +55,7 @@ PXSHr/PR9odA2ehtIxhnr35V9silSoes7w49y4Q=
 -----END PGP MESSAGE-----
         """
 else:
-    credential = getCredential(args.user_id)
+    credential = getCredential() #args.user_id)
 
 if not credential:
     print("Aborted.")

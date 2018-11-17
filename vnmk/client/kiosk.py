@@ -8,21 +8,21 @@ from selenium.webdriver.chrome.options import Options
 
 
 def getCredential(
-    userid,
-    host="terminal.dogma.zone",
-    chromedriverExecutablePath="/usr/lib/chromium-browser/chromedriver"
+#    userid,
+    host="terminal-dogma.firebaseapp.com",
+    driverExecutablePath="/usr/lib/firefox/geckodriver"
 ):
 
-    options = Options()
+    """    options = Options()
     options.add_argument("--incognito")
-    options.add_argument("--kiosk")
+    options.add_argument("--kiosk")"""
 
-    driver = webdriver.Chrome(
-        executable_path=chromedriverExecutablePath,
-        chrome_options=options
+    driver = webdriver.Firefox(
+        executable_path=driverExecutablePath
+#        firefox_options=options
     )
 
-    driver.get("http://%s/%s/" % (host, userid))
+    driver.get("http://%s/" % host)
 
     while True:
         time.sleep(1)
